@@ -160,7 +160,7 @@
 
 \title{\large Maturitätsarbeit an der Kantonsschule Zürich Nord \\ \huge 3D-Rendering und Floating-Point: Vulkan und OpenGL als Grafik-API's im Vergleich}
 \date{02. Dezember 2019}
-\author{... \\ M6e \\ Betreut von: \\ ...}
+\author{Cedric Schwyter \\ M6e \\ Betreut von: \\ Christian Prim}
 \titlepic{\includegraphics[width=\textwidth]{res/titlepic2.png}}
 
 \begin{document}
@@ -178,7 +178,7 @@
 \pagenumbering{arabic}
 \section{Vorwort}
 Da sich diese Arbeit auf einem ein wenig abstrakterem Niveau als dem typischen Anfänger-Program-mierlevel bewegt, wird minimales technisches und informatisches Grundverständnis vorausgesetzt, da es relativ unmöglich und völlig ausserhalb des Rahmens dieser Arbeit ist, die gesamten programmiertechnischen Basics zu erklären, welche hier angewendet werden. Die mathematische und physikalische Theorie zu den wichtigen Teilbereichen wird jedoch selbstverständlich erklärt, wobei auch hier ein basales mathematisches Verständnis und gewisse Grundkenntnisse vorausgesetzt werden, vor allem in der linearen Algebra, der Vektorgeometrie und der Analysis mit ihrer Differentialrechnung. \par
-Weiterhin möchte ich an dieser Stelle meinen ausdrücklichen Dank an meinen lieben Kollegen ..., welcher mir ein wenig mit den \glspl{Makefile} und dem Port zu \gls{Linux} geholfen hat, und an meinen engagierten Betreuer ..., welcher meine Formeln stets zu korrigieren wusste, anbringen.\par
+Weiterhin möchte ich an dieser Stelle meinen ausdrücklichen Dank an meinen lieben Kollegen Charpoan Kong, welcher mir ein wenig mit den \glspl{Makefile} und dem Port zu \gls{Linux} geholfen hat, und an meinen engagierten Betreuer Christian Prim, welcher meine Formeln stets zu korrigieren wusste, anbringen.\par
 Dieses Thema wurde ausgewählt, da ich schon Vorwissen und Erfahrung in der Grafikprogrammierung hatte, wobei ich in \acrshort{OpenGL} heimischer war als in Vulkan. Ich habe bereits mehrere OpenGL-\glspl{Engine} in mehreren Programmiersprachen (C++, Java), jedoch erst eine einzige Vulkan-\gls{Engine} (C++) geschrieben. Ich persönlich sah es als Herausforderung für mich selbst, eine fähige \gls{Engine} mit Vulkan zu erstellen und ich glaube, dass ich diese auch gemeistert habe. Das Ganze wurde mit dem Hintergedanken der \gls{Floating-Point}-Ungenauigkeit angeschaut, welche oft ungewöhnliche Effekte nach sich zieht. Als Beispiel dafür gab es in diesem Projekt einen unbeabsichtigten Fall, bei welchem in einer Projektionsmatrix zwei \glspl{Float} von 8-byte- in 4-byte-Datentypen umgewandelt und erst nach dieser Umwandlung durcheinander geteilt wurden. Dadurch ging, vor allem bei kleinen Werten, sehr viel an Genauigkeit verloren. Dies führte zu irritierenden Verzerrungen der Projektion des dargestellten Raumes. Auf ein chaotisches System wie ein Doppelpendel angewandt entstehen durch \gls{Floating-Point}-Ungenauigkeiten sicherlich spannende Dinge. Dies war die Überlegung, welche sich stärker als erhofft bewahrheitet hat und auf Umwegen sogar dazu führte, dass ich mich sehr oberflächlich mit dem Lagrange-Formalismus auseinandergesetzt habe.\par
 Das Titelbild wurde mit der Vulkan-Engine gerendert wobei mit internen Einstellungen der Polygon Mode verändert wurde, sodass das Modell nur als Netz aus Linien dargestellt wurde.
 
@@ -220,14 +220,14 @@ Im Sinne der Grafikprogrammierung wird unter einer Grafik-\acrshort{API} eine Ve
 
 \subsection{Mathematische Grundlagen}
 Vorkenntnisse in der linearen Algebra und der Vektorrechnung werden vorausgesetzt um die folgenden Sachverhalte zu verstehen.\par
-Die erste Schwierigkeit, die beim Rendern von 3D-Räumen auftaucht, ist die Darstellung auf einem 2D-Bildschirm. Irgendwie müssen dreidimensionale Raumkoordinaten auf zweidimensionale Bildschirmkoordinaten projiziert werden. Dies stellt sich als fundamentale Frage, denn, wenn dies nicht geklärt werden kann, können zwangsweise keine visuellen Ergebnisse entstehen. Die Werkzeuge, um dieses Problem zu lösen bietet die Matrizenrechnung mit Transformationsmatrizen. In der Grafikprogrammierung werden nach Konvention 4-dimensionale Vektoren folgender Form verwendet, wobei $w$ standardmässig auf 1 gesetzt wird, sofern keine spezielle Verwendung für diese vierte Komponente besteht:
+Die erste Schwierigkeit, die beim Rendern von 3D-Räumen auftaucht, ist die Darstellung auf einem 2D-Bildschirm. Irgendwie müssen dreidimensionale Raumkoordinaten auf zweidimensionale Bildschirmkoordinaten projiziert werden. Dies stellt sich als fundamentale Frage, denn, wenn dies nicht geklärt werden kann, können zwangsweise keine visuellen Ergebnisse entstehen. Die Werkzeuge, um dieses Problem zu lösen bietet die Matrizenrechnung mit Transformationsmatrizen. In der Grafikprogrammierung werden nach Konvention 4-dimensionale Vektoren folgender Form verwendet, wobei $w$ standardmässig auf 1 gesetzt wird, sofern keine spezielle Verwendung für diese vierte Komponente besteht: 
 \begin{align*}
     \begin{pmatrix}
     x \\
     y \\
     z \\
     w
-    \end{pmatrix}
+    \end{pmatrix} 
 \end{align*}
 \bigbreak
 Das heisst, alle dreidimensionalen Vektoren in der Grafikrechnung können ebenfalls als vierdimensionale Vektoren, deren vierte Komponente 1 ist, dargestellt werden. Zum Beispiel werden Farbwerte mit 3 Kanälen (RGB) durch so einen Vektor mit $w = 1$, und Farbwerte mit 4 Kanälen (RGBA) als normalen vierdimensionalen Vektor (bei welchem $w$ dem Wert des vierten Kanals entspricht) repräsentiert. Dieser Konvention und den mathematischen Rechengesetzen zufolge werden auch $4\times4$-Matrizen verwendet da die Matrixmultiplikation mit einem Vektor sonst nicht definiert wäre. Zunächst werden die benötigten Transformationen für die nachfolgenden theoretischen Betrachtungen erläutert.\footcite{transformations}
@@ -240,7 +240,7 @@ Ein Vektor kann mit einer Matrix wie folgt um den Skalierungsvektor $\begin{pmat
     c
     \end{pmatrix}$ skaliert werden:
 \begin{align*}
-    \begin{bmatrix}
+    \begin{bmatrix} 
     a & 0 & 0 & 0 \\
     0 & b & 0 & 0 \\
     0 & 0 & c & 0 \\
@@ -248,7 +248,7 @@ Ein Vektor kann mit einer Matrix wie folgt um den Skalierungsvektor $\begin{pmat
     \end{bmatrix} \cdot
     \begin{pmatrix}
     x \\ y \\ z \\ 1
-    \end{pmatrix} &=
+    \end{pmatrix} &= 
     \begin{pmatrix}
     a \cdot x \\
     b \cdot y \\
@@ -264,7 +264,7 @@ Eine Translation um den Verschiebungsvektor $\begin{pmatrix}
     c
     \end{pmatrix}$ sieht folgendermassen aus:
 \begin{align*}
-    \begin{bmatrix}
+    \begin{bmatrix} 
     1 & 0 & 0 & a \\
     0 & 1 & 0 & b \\
     0 & 0 & 1 & c \\
@@ -272,7 +272,7 @@ Eine Translation um den Verschiebungsvektor $\begin{pmatrix}
     \end{bmatrix} \cdot
     \begin{pmatrix}
     x \\ y \\ z \\ 1
-    \end{pmatrix} &=
+    \end{pmatrix} &= 
     \begin{pmatrix}
     a + x \\
     b + y \\
@@ -297,7 +297,7 @@ Die Translation bezeichnet grundsätzlich die Addition zweier Vektoren. Aus dies
     b + 0 \\
     c + 0 \\
     1
-    \end{pmatrix} =
+    \end{pmatrix} = 
     \begin{pmatrix}
     a \\
     b \\
@@ -323,7 +323,7 @@ Um die x-Achse $
 1
 \end{pmatrix}$ mit Winkel $\theta$:
 \begin{align*}
-    \begin{bmatrix}
+    \begin{bmatrix} 
     1 & 0 & 0 & 0 \\
     0 & \cos{\theta} & - \sin{\theta} & 0 \\
     0 & \sin{\theta} & \cos{\theta} & 0 \\
@@ -331,7 +331,7 @@ Um die x-Achse $
     \end{bmatrix} \cdot
     \begin{pmatrix}
     x \\ y \\ z \\ 1
-    \end{pmatrix} &=
+    \end{pmatrix} &= 
     \begin{pmatrix}
     x \\
     \cos{\theta} \cdot y - \sin{\theta} \cdot z \\
@@ -348,7 +348,7 @@ Um die y-Achse $
 1
 \end{pmatrix}$ mit Winkel $\theta$:
 \begin{align*}
-    \begin{bmatrix}
+    \begin{bmatrix} 
     \cos{\theta} & 0 & \sin{\theta} & 0 \\
     0 & 1 & 0 & 0 \\
     - \sin{\theta} & 0 & \cos{\theta} & 0 \\
@@ -356,7 +356,7 @@ Um die y-Achse $
     \end{bmatrix} \cdot
     \begin{pmatrix}
     x \\ y \\ z \\ 1
-    \end{pmatrix} &=
+    \end{pmatrix} &= 
     \begin{pmatrix}
     \cos{\theta} \cdot x + \sin{\theta} \cdot z \\
     y \\
@@ -373,7 +373,7 @@ Um die z-Achse $
 1
 \end{pmatrix}$ mit Winkel $\theta$:
 \begin{align*}
-    \begin{bmatrix}
+    \begin{bmatrix} 
     \cos{\theta} & - \sin{\theta} & 0 & 0 \\
     \sin{\theta} & \cos{\theta} & 0 & 0 \\
     0 & 0 & 1 & 0 \\
@@ -381,7 +381,7 @@ Um die z-Achse $
     \end{bmatrix} \cdot
     \begin{pmatrix}
     x \\ y \\ z \\ 1
-    \end{pmatrix} &=
+    \end{pmatrix} &= 
     \begin{pmatrix}
     \cos{\theta} \cdot x - \sin{\theta} \cdot y \\
     \sin{\theta} \cdot x + \cos{\theta} \cdot y \\
@@ -402,7 +402,7 @@ b \\
 c
 \end{pmatrix}\Biggl| = 1$ mit Winkel $\theta$:
 \begin{align*}
-    \begin{bmatrix}
+    \begin{bmatrix} 
     \cos{\theta} + a^{2} \cdot (1 - \cos{\theta}) & a \cdot b \cdot (1 - \cos{\theta}) - c \cdot \sin{\theta} & a \cdot c \cdot (1 - \cos{\theta}) + b \cdot \sin{\theta} & 0 \\
     b \cdot a \cdot (1 - \cos{\theta}) + c \cdot \sin{\theta} & \cos{\theta} + b^{2} \cdot (1 - \cos{\theta}) & b \cdot c \cdot (1 - \cos{\theta}) - a \cdot \sin{\theta} & 0 \\
     c \cdot a \cdot (1 - \cos{\theta}) - b \cdot \sin{\theta} & c \cdot b \cdot (1 - \cos{\theta}) + a \cdot \sin{\theta} & \cos{\theta} + c^{2} \cdot (1 - \cos{\theta}) & 0 \\
@@ -417,7 +417,7 @@ c
     x \cdot (c \cdot a \cdot (1 - \cos{\theta}) - b \cdot \sin{\theta}) + y \cdot (c \cdot b \cdot (1 - \cos{\theta}) + a \cdot \sin{\theta}) + z \cdot (\cos{\theta} + c^{2} \cdot (1 - \cos{\theta})) \\
     1
     \end{pmatrix}
-\end{align*}
+\end{align*} 
 \bigbreak
 Diese Transformationsmatrizen werden sehr schnell sehr mühsam. Um dies anschaulich darzustellen wurde die Rotationsmatrix für eine Drehung um eine beliebige Achse abgebildet. Deswegen wird die lineare Algebra in beiden Applikationen von einer Bibliothek namens \acrfull{GLM} übernommen, damit keine eigene Lösung implementiert werden muss.\par
 Durch Matrizen lassen sich Vektoren also manipulieren und transformieren, wie man will. Durch die Matrizenmultiplikation können mehrere Transformationen miteinander verknüpft und in einer einzigen Matrix dargestellt werden. Durch diese Möglichkeiten der Veränderung von Vektoren kann die nachfolgend erklärte Übersetzung von 3D zu 2D durchgeführt werden. Zuerst jedoch müssen Koordinatensysteme eingeführt werden, welche oft benötigt werden.
@@ -464,7 +464,7 @@ Diese Matrizenmultiplikation findet in den \gls{Vertex} \gls{Shader}n statt. Sta
     \label{fig:view-space}
 \end{figure}
 \footcitetext{logl-camera}
-Der Direction-Vektor $\vec{D}$ zeigt hierbei hinten aus der Kamera hinaus. Dies ist jedoch Definitionssache, da ein einziges Vorzeichen den Unterschied macht. Alle Vektoren bis auf $\vec{P}$ sind normiert. Die folgende Matrix wird gemeinhin als LookAt-Matrix bezeichnet. Dabei geht es darum, eine Transformationsmatrix zu finden, wenn die Positon und das Target $\vec{T}$ der Kamera, also wo die Kamera hinblickt, gegeben ist.\footcite{camera} Weiterhin gibt es noch den World Up-Vektor (bei Vulkan mit negativem Vorzeichen, da dort die $y$-Achse in die andere Richtung zeigt):
+Der Direction-Vektor $\vec{D}$ zeigt hierbei hinten aus der Kamera hinaus. Dies ist jedoch Definitionssache, da ein einziges Vorzeichen den Unterschied macht. Alle Vektoren bis auf $\vec{P}$ sind normiert. Die folgende Matrix wird gemeinhin als LookAt-Matrix bezeichnet. Dabei geht es darum, eine Transformationsmatrix zu finden, wenn die Positon und das Target $\vec{T}$ der Kamera, also wo die Kamera hinblickt, gegeben ist.\footcite{camera} Weiterhin gibt es noch den World Up-Vektor (bei Vulkan mit negativem Vorzeichen, da dort die $y$-Achse in die andere Richtung zeigt): 
 \begin{align*}
     \vec{WU} = \begin{pmatrix}
     0 \\
@@ -483,13 +483,13 @@ Die $\vec{U}$, $\vec{R}$ und $\vec{D}$ Vektoren lassen sich zu jedem Zeitpunkt r
 $\vec{U}$ muss nicht normiert werden, da er aus dem Kreuzprodukt zweier bereits normierter Vektoren berechnet wird. Wenn ein Koordinatensystem wie das View Space-System durch 3 senkrechte Achsen definiert ist, lässt sich eine Matrix, welche Vektoren in dieses Koordinatensystem transformiert, erstellen.\par
 In diesem Zusammenhang wird die Übersetzung von World Space- in View Space-Koordinaten vorgenommen, wobei exakt diese Transformation auf eine vorhergehende Verschiebung um die Position der Kamera angewendet wird. Diese Matrix wird dann LookAt-Matrix genannt\footcite{camera}:
 \begin{align*}
-    \text{LookAt} &=
+    \text{LookAt} &= 
     \begin{bmatrix}
     R_{x} & R_{y} & R_{z} & 0 \\
     U_{x} & U_{y} & U_{z} & 0 \\
     D_{x} & D_{y} & D_{z} & 0 \\
     0 & 0 & 0 & 1
-    \end{bmatrix} \cdot
+    \end{bmatrix} \cdot 
     \begin{bmatrix}
     1 & 0 & 0 & -P_{x} \\
     0 & 1 & 0 & -P_{y} \\
@@ -504,7 +504,7 @@ In diesem Zusammenhang wird die Übersetzung von World Space- in View Space-Koor
     \end{bmatrix}
 \end{align*}
 \bigbreak
-Diese LookAt-Matrix beinhaltet nun also die genaue Position ($\vec{P}$) und Ausrichtung ($\vec{R}$, $\vec{U}$ und $\vec{D}$) der Kamera. Genau die Bedingungen, die für die View-Matrix gelten. Somit ist die View-Matrix definiert und sorgt dafür, dass der Benutzer seine virtuelle Kamera bewegen und rotieren kann. In tatsächlichen Applikationen wird mit den sogenannten Eulerschen Winkeln gearbeitet.
+Diese LookAt-Matrix beinhaltet nun also die genaue Position ($\vec{P}$) und Ausrichtung ($\vec{R}$, $\vec{U}$ und $\vec{D}$) der Kamera. Genau die Bedingungen, die für die View-Matrix gelten. Somit ist die View-Matrix definiert und sorgt dafür, dass der Benutzer seine virtuelle Kamera bewegen und rotieren kann. In tatsächlichen Applikationen wird mit den sogenannten Eulerschen Winkeln gearbeitet. 
 \begin{figure}[ht]
     \centering
     \includegraphics[scale=0.4]{res/euler-angles2.png}
@@ -526,8 +526,8 @@ Da der Roll $\phi$ meistens nur bei Flugsimulatoren gebraucht wird, sieht dieser
 \subsection{Phong-Lighting}
 Ein wichtiger Bestandteil einer jeden Grafikapplikation, welche auf eine realitätsnahe Darstellung des Raumes abzielt, sind annähernd gute Berechnungen der Lichtverhältnisse. Ein Modell, welches sich durchgesetzt und bewährt hat, ist das sogenannte \textit{Phong-Lighting} oder dessen Weiterentwicklung \textit{Blinn-Phong-Lighting}. Dieses versucht, die geometrische Optik der Farbempfindung nachzuahmen. Dabei werden verschiedene Komponenten des Lichts unterschieden. \footcite{logl-lighting}
 
-\subsubsection{Ambient Lighting}
-Es gibt das \textit{Ambient Lighting}, welches als Umgebungslicht verstanden werden kann. Dies setzt sich in der echten Welt aus reflektiertem Licht von allen möglichen Oberflächen zusammen. Da dies rechentechnisch sehr schwer zu simulieren ist, wird normalerweise einfach eine bestimmte Menge an Umgebungsbeleuchtung angenommen.
+\subsubsection{Ambient Lighting} 
+Es gibt das \textit{Ambient Lighting}, welches als Umgebungslicht verstanden werden kann. Dies setzt sich in der echten Welt aus reflektiertem Licht von allen möglichen Oberflächen zusammen. Da dies rechentechnisch sehr schwer zu simulieren ist, wird normalerweise einfach eine bestimmte Menge an Umgebungsbeleuchtung angenommen. 
 
 \subsubsection{Diffuse Lighting}
 Weiter existiert das \textit{Diffuse Lighting}. Dies dient der Berechnung der direkten Beleuchtung eines \glspl{Face} durch eine Lichtquelle mithilfe von ein paar vektorgeometrischen Eigenschaften. Über das Skalarprodukt des Vektors, welcher zur Lichtquelle zeigt, mit dem Normalenvektor des \glspl{Face} kann ein Koeffizient für die Erhellung berechnet werden. Abbildung \ref{fig:diffuse} zeigt dies schematisch.
@@ -621,8 +621,8 @@ ret
 Wenn man sich den \gls{Assembler}-Code ein wenig genauer anschaut, dann sieht man, dass nur ein paar Register herumgeschoben werden und am Schluss in Zeile 8 der tatsächliche Additionsbefehl kommt. Diese Befehlsfolge kann ein Computer nun verstehen und ausführen. Unter Windows beinhalten ausführbare \textit{.exe}-Dateien teilweise \gls{Assembler}-Code. Würde man eine \textit{.exe} mit den richtigen Encodings etc. in einem \gls{Texteditor} öffnen, würde man zum Teil ähnliche Strukturen und Syntax wie in \textit{add.s} sehen. \par
 Bis der \gls{Compiler} diese Übersetzung ausgibt, passiert vorher noch etwas anderes: der Präprozessor-Schritt. Der Präprozessor schaut sich den Quellcode an und sobald er \textit{Preprocessor Directives}, also Präprozessor-Befehle, antrifft, führt er diese aus. Preprocessor Directives können zum Beispiel die folgenden Statements sein:
 \begin{minted}[linenos=true]{cpp}
-#ifndef CORE_HPP
-#define CORE_HPP
+#ifndef CORE_HPP 
+#define CORE_HPP 
 #include "Header.hpp"
 #endif      // CORE_HPP
 \end{minted}
@@ -655,15 +655,15 @@ In den zwei \glspl{Engine} wurde mit einem Programmierstil gearbeitet, der mit e
 Die \acrfull{OpenGL} wurde 1992 als IRIS GL als eine erste Umgebung für 2D-, 3D- und Mobile-Grafikapplikationen von Silicon Graphics initiiert und im Juli 2006 von der Khronos Group, welche ein Industriekonsortium aus unter anderem Intel, Nvidia, AMD und Google stellt, übernommen.\footcite{wasistopengl} Seit jeher ist \acrshort{OpenGL} die am weitesten verbreitete Grafik-\acrshort{API}.\footcite{aboutopengl} Der Standard definiert einen Satz an Befehlen zur Computation und Darstellung von 3D-Szenerien in Echtzeit. \acrshort{OpenGL} lässt proprietäre Erweiterungen von externen Organisationen zu. Die Implementation der Grafik-\acrshort{API} findet durch Systembibliotheken oder Grafikkartentreiber statt. Durch diese Erweiterbarkeit wurden \acrshort{OpenGL}-Implementationen für praktisch alle gängigen und nicht so gängigen Betriebssysteme und Umgebungen geschrieben, u.a. Microsoft Windows seit Windows 95, macOS, das X Window System (mit praktisch sämtlichen \gls{Linux}-Distributionen), Solaris und vielen mehr. Ausserdem wurde mit der \acrfull{OpenGL ES} die Verwendung von \acrshort{OpenGL} auf mobilen Geräten (unter z.B. Apple iOS und Android) und Konsolen wie der Playstation oder der Xbox 360 möglich. Mit \acrshort{OpenGL ES} wurde ebenfalls WebGL entwickelt, ein \acrshort{OpenGL}-Kontext für Webbrowser, welcher durch \acrshort{OpenGL}'s Vielseitigkeit in praktisch jedem Browser implementiert ist.\footcite{oglwiki-related} Das Apple WebKit, welches die Grundlage für viele moderne Browser legt, nutzt zur Hardwarebeschleunigung \acrshort{OpenGL} durch WebGL.\footcite{webkithwa}
 
 \subsubsection{Funktionsweise von OpenGL}
-\acrshort{OpenGL}-Befehle folgen immer einer gewissen Syntax, um einheitlich und logisch strukturiert zu sein. Diese beinhaltet prinzipiell immer das Präfix \textit{gl*} oder \textit{GL*}. Beispiele dafür wären:
+\acrshort{OpenGL}-Befehle folgen immer einer gewissen Syntax, um einheitlich und logisch strukturiert zu sein. Diese beinhaltet prinzipiell immer das Präfix \textit{gl*} oder \textit{GL*}. Beispiele dafür wären: 
 \begin{minted}[linenos=true]{cpp}
 void glGenVertexArrays(GLsizei n, GLuint *arrays);
-void glPolygonMode(GLenum face, GLenum mode);
+void glPolygonMode(GLenum face, GLenum mode); 
 void glClear(GLbitfield mask);
 \end{minted}
 \bigbreak
 Analog funktioniert die Syntax der Windowing-Bibliothek \acrshort{GLFW}. Diese macht von dem Präfix \textit{glfw*} Gebrauch. \acrshort{OpenGL} definiert eigene Datentypen wie \textit{GLenum} oder \textit{GLuint}. Diese dienen prinzipiell dazu, dass die \acrshort{OpenGL}-Implementation des Systems auf allen Plattformen mit denselben Datentypen arbeitet, welche standardisiert sind. Eine weitere Besonderheit ist, dass viele \acrshort{OpenGL}-Befehle mit sogenannten \textit{Flags} funktionieren. Flags dienen dazu, Optionen ein- oder auszuschalten, ohne dass für jede Option ein einzelner Parameter an die Funktion übergeben werden muss. Dieses Prinzip wird auch bei Vulkan verwendet und funktioniert wie folgt: Die Optionen können an- oder ausgeschalten werden und nehmen entweder den Wert \textit{Ein} oder \textit{Aus} an. Da Zahlenwerte im Binärsystem abgespeichert werden, kann jede Stelle im Binärsystem entweder den Wert 1 oder 0 haben. Ein Bit in der Computerwelt entspricht einer Stelle im Binärsystem. Dies kann durch bitweise logische Operationen ausgenutzt werden, um viele Optionen zu setzen. Insbesondere wird das bitweise ODER, welches den Operator $|$ hat, benötigt. Wenn jetzt Option 1 den hexadezimalen Wert 0x0001, Option 2 den Wert 0x0002 und Option 3 den Wert 0x0004 zugewiesen bekommt, dann entsprechen diese hexadezimalen Werte den binären Werten 0001, 0010 und 0100. Dabei ist die 1 jeweils immer an genau einer Stelle. Diese Werte werden dann die Flag-Bits genannt. Wenn jetzt zum Beispiel Option 1 und Option 3, nicht jedoch Option 2 aktiviert werden wollen, dann werden die zwei Flags durch ein bitweises ODER verknüpft und es kommt $0001 | 0100 = 0101$ heraus. Optionen können durch geschickte Werte also genau einem Bit einer Zahl zugewiesen werden. \acrshort{OpenGL} kann dann selbst überprüfen, welches Bit auf \textit{Ein} und welches auf \textit{Aus} gestellt ist. \acrshort{OpenGL} (und auch Vulkan) weiss dann genau, dass Optionen 1 und 3 aktiviert werden sollen, und Option 2 nicht. In echten Programmen sieht man diese Idee auch in anderen Zusammenhängen als nur der Grafikprogrammierung. Die Benutzung von Flags gilt als allgemeines Konzept in der Programmierung. Es gibt verschiedene Wege, dieses System umzusetzen. In Anhang B sind Beispiele für Flags und Flag-Bits aus \acrshort{OpenGL} und Vulkan aufgelistet, da dies ein fundamentales Prinzip ist, von welchem beide Grafik-\acrshort{API}'s Gebrauch machen.\par
-\acrshort{OpenGL} funktioniert über die sogenannte \textit{Pipeline}. Die Pipeline besteht aus mehreren \textit{Stages}, wovon die wichtigsten die \textit{\gls{Shader} Stages} sind. Diese umfassen den \textit{\gls{Vertex} \gls{Shader}}, \textit{\gls{Fragment} \gls{Shader}} und \textit{Geometry \gls{Shader}}, welche allesamt durch den Entwickler programmierbar sind.\footcite{ogl-pipeline-khronos-wiki} \gls{Shader} sind kleine Programme, welche auf der GPU laufen. Sie sind in der \acrfull{GLSL}, einer von der Syntax her C-ähnlichen Sprache, geschrieben. \gls{Shader} umfassen immer eine \textit{main}-Methode, welche für jeden Input ausgeführt wird. Das heisst, ein \gls{Vertex} \gls{Shader} führt seine \textit{main}-Methode für jeden \gls{Vertex} und ein \gls{Fragment} \gls{Shader} seine \textit{main}-Methode für jedes \gls{Fragment} einzeln aus (für Beispiele von \gls{Shader}-Programmen in \acrshort{GLSL} siehe Anhang C). Es können durch sogenannte \textit{Uniform Buffers} oder grössere \textit{Storage Buffers} kleinere bis mittlere Datenmengen an die \gls{Shader} geschickt werden. Der \gls{Vertex} \gls{Shader} führt Berechnungen also pro \gls{Vertex} aus. Diese kommen dann durch die \textit{Shape Assembly Stage}, wo sie zu primitiven Dreiecken verbunden werden. Ein optionaler Geometry \gls{Shader} verfeinert allenfalls die Geometrie der Dreiecke oder führt sonstige Berechnungen auf Basis der generellen Geometrie der \gls{Vertices} aus. Darauf folgt die \textit{Rasterization Stage}. Diese rastert den Output des Geometry \gls{Shader}s in \glspl{Fragment}. Diese kommen dann durch den \gls{Fragment} \gls{Shader}, wo die meisten Licht- und Schattenberechnungen durchgeführt werden. Zu guter Letzt folgen diverse Tests und sogenannte \textit{Blending}-Operationen. Blending bezeichnet die Berechnung der Farbe wenn Transparenz vorhanden ist und dahinterliegende Objekte einen Einfluss auf die Farbe des spezifischen \gls{Fragment}s haben. Die angesprochenen Tests umfassen unter anderem Depth-, Stencil- und Scissor-Tests. Der Depth-Test überprüft, ob ein \gls{Fragment} hinter oder vor einem anderen zu liegen kommt und zeigt dann dementsprechend das richtige an, respektive führt die Blending-Operationen in der richtigen Reihenfolge aus. Stencil-Tests dienen zum Beispiel dem Umrahmen von 3D-Objekten. Der Scissor-Test schneidet den Ausschnitt so zu wie der Programmierer es haben will. Abbildung \ref{fig:opengl-pipe} veranschaulicht die Pipeline. Dabei sind die blauen, die programmierbaren und die grauen die fixen Stages. Die \gls{Vertices} werden durch einen sogenannten \textit{Draw Call} durch die Pipeline gepumpt. Sobald also im Code ein Aufruf zur \acrshort{OpenGL}-Funktion \textit{glDrawArrays()} steht, wird ein Draw Call auf der Grafikkarte mit vordefinierter Pipeline ausgeführt.
+\acrshort{OpenGL} funktioniert über die sogenannte \textit{Pipeline}. Die Pipeline besteht aus mehreren \textit{Stages}, wovon die wichtigsten die \textit{\gls{Shader} Stages} sind. Diese umfassen den \textit{\gls{Vertex} \gls{Shader}}, \textit{\gls{Fragment} \gls{Shader}} und \textit{Geometry \gls{Shader}}, welche allesamt durch den Entwickler programmierbar sind.\footcite{ogl-pipeline-khronos-wiki} \gls{Shader} sind kleine Programme, welche auf der GPU laufen. Sie sind in der \acrfull{GLSL}, einer von der Syntax her C-ähnlichen Sprache, geschrieben. \gls{Shader} umfassen immer eine \textit{main}-Methode, welche für jeden Input ausgeführt wird. Das heisst, ein \gls{Vertex} \gls{Shader} führt seine \textit{main}-Methode für jeden \gls{Vertex} und ein \gls{Fragment} \gls{Shader} seine \textit{main}-Methode für jedes \gls{Fragment} einzeln aus (für Beispiele von \gls{Shader}-Programmen in \acrshort{GLSL} siehe Anhang C). Es können durch sogenannte \textit{Uniform Buffers} oder grössere \textit{Storage Buffers} kleinere bis mittlere Datenmengen an die \gls{Shader} geschickt werden. Der \gls{Vertex} \gls{Shader} führt Berechnungen also pro \gls{Vertex} aus. Diese kommen dann durch die \textit{Shape Assembly Stage}, wo sie zu primitiven Dreiecken verbunden werden. Ein optionaler Geometry \gls{Shader} verfeinert allenfalls die Geometrie der Dreiecke oder führt sonstige Berechnungen auf Basis der generellen Geometrie der \gls{Vertices} aus. Darauf folgt die \textit{Rasterization Stage}. Diese rastert den Output des Geometry \gls{Shader}s in \glspl{Fragment}. Diese kommen dann durch den \gls{Fragment} \gls{Shader}, wo die meisten Licht- und Schattenberechnungen durchgeführt werden. Zu guter Letzt folgen diverse Tests und sogenannte \textit{Blending}-Operationen. Blending bezeichnet die Berechnung der Farbe wenn Transparenz vorhanden ist und dahinterliegende Objekte einen Einfluss auf die Farbe des spezifischen \gls{Fragment}s haben. Die angesprochenen Tests umfassen unter anderem Depth-, Stencil- und Scissor-Tests. Der Depth-Test überprüft, ob ein \gls{Fragment} hinter oder vor einem anderen zu liegen kommt und zeigt dann dementsprechend das richtige an, respektive führt die Blending-Operationen in der richtigen Reihenfolge aus. Stencil-Tests dienen zum Beispiel dem Umrahmen von 3D-Objekten. Der Scissor-Test schneidet den Ausschnitt so zu wie der Programmierer es haben will. Abbildung \ref{fig:opengl-pipe} veranschaulicht die Pipeline. Dabei sind die blauen, die programmierbaren und die grauen die fixen Stages. Die \gls{Vertices} werden durch einen sogenannten \textit{Draw Call} durch die Pipeline gepumpt. Sobald also im Code ein Aufruf zur \acrshort{OpenGL}-Funktion \textit{glDrawArrays()} steht, wird ein Draw Call auf der Grafikkarte mit vordefinierter Pipeline ausgeführt. 
 \begin{figure}[ht]
     \centering
     \includegraphics[scale=2]{res/oglpipeline.png}
@@ -702,7 +702,7 @@ Da Vulkan so gesehen der direkte Nachfolger von \acrshort{OpenGL} ist, gibt es h
         Aufwand & niedrig/mittel & sehr hoch \\
         Komplexität & mittel & sehr hoch \\
         Abstraktionsgrad & tief & hoch \\
-        Fehleranfälligkeit & tief & hoch \\
+        Fehleranfälligkeit & tief & hoch \\ 
         Debugmöglichkeiten & internes Error-Callback & eigenes Debug-Callback \\ & & durch externe Validation Layers \\
         Optimierungsmöglichkeiten & eher wenige & sehr viele \\
         Parallelisierungsgrad & nur teilweise auf GPU & sehr hoch \\
@@ -721,7 +721,7 @@ Da Vulkan so gesehen der direkte Nachfolger von \acrshort{OpenGL} ist, gibt es h
         MultiSampling AntiAliasing & keine Angaben & bis zu 64-fach \\
         Depth-Testing & ja & ja \\
         Stencil-Testing & ja & ja \\
-        Blending & ja & ja \\
+        Blending & ja & ja \\ 
         \gls{Face}-Culling & ja & ja \\
         Eigener Framebuffer & optional & zwingend \\
         Texturen und Sampler & 1D, 2D und 3D & 1D, 2D und 3D \\
@@ -755,7 +755,7 @@ Da Vulkan so gesehen der direkte Nachfolger von \acrshort{OpenGL} ist, gibt es h
 \end{table}
 \bigbreak
 Wie aus der Tabelle hervorgeht, haben die \glspl{Engine} in etwa dieselben grafischen Features. Lediglich bei der Implementation gibt es grosse Unterschiede und Vulkan steht im ersten Moment nicht allzu gut da. In erster Linie liegt dies daran, dass \acrshort{OpenGL} kontinuierlich aktualisiert und optimiert wurde. Deswegen konnte \acrshort{OpenGL} seine Einfachheit gegenüber Vulkan behalten und dabei dieselben Leistungen erzielen. Wie schon zuvor erwähnt ist Vulkan viel hardware-näher als \acrshort{OpenGL}. Dies lässt sich auch aus der Tabelle herauslesen. Weiter ist klar erkennbar, dass es von den grafischen Features keine erkennbaren Unterschiede gibt. Bei der Leistung sticht Vulkan klar heraus, da es eigentlich immer flüssig läuft. \acrshort{OpenGL} kommt bei grossen Buffern und vielen Objekten schnell mal ins Schwitzen. Durch Parallelisierung ist dies Vulkans Hauptvorteil.\par
-Dass V-Sync unter Linux nicht deaktivierbar ist, liegt bei den Implementationen entweder an der Windowing-Library \acrshort{GLFW} oder dem Windowing-System des Betriebssystemes und somit nicht direkt an den \acrshort{API}'s.\par
+Dass V-Sync unter Linux nicht deaktivierbar ist, liegt bei den Implementationen entweder an der Windowing-Library \acrshort{GLFW} oder dem Windowing-System des Betriebssystemes und somit nicht direkt an den \acrshort{API}'s.\par 
 Der \textit{VK\_PRESENT\_MODE} legt fest, wie ein Bild angezeigt wird, nachdem es gerendert wurde. Als Beispiel gibt es den \textit{VK\_PRESENT\_MODE\_FIFO\_KHR}. FIFO steht dabei für \textit{first in, first out}. Vulkan wartet bis der Bildschirm zum Darstellen des neuen \glspl{Frame} bereit ist und zeigt dieses erst dann. Dabei kann kein Screen Tearing auftreten, da dieses mit unterschiedlichen Aktualisierungs- und Darstellungsfrequenzen des Framebuffers und des Bildschirms zu tun hat. Der \textit{Framebuffer} ist eine Speicheransammlung im High-Performance-Arbeitsspeicher auf der Grafikkarte, in welche das aktuell gerenderte Bild geschrieben wird, bis es angezeigt werden kann. Tearing tritt dann auf, wenn der Computer beginnt, das gerenderte Bild aus dem Framebuffer zu lesen und zum Bildschirm zur Darstellung zu senden, aber mitten in diesem Prozess des Herauslesens bereits das neue \gls{Frame} hineingeschrieben wird. Dadurch zeichnet sich eine ganz klare Linie zwischen dem alten und dem neuen \gls{Frame} ab; das Bild \textit{reisst} (engl. \textit{to tear}, 'reissen'). Dies wird als Störartefakt bezeichnet und kann durch eine Synchronisation der Frequenzen behoben werden. Dies ist im Prinzip das, was V-Sync macht. Bei den Applikationen wurde für die Tests \textit{VK\_PRESENT\_MODE\_MAILBOX\_KHR} benutzt, welcher mit Tearing zu kämpfen hat und kein V-Sync besitzt. Jedoch wurde die Aktualisierungsfrequenz des Framebuffers unter Linux automatisch trotzdem mit der des Bildschirms synchronisiert. Dies konnte nicht ausgeschalten werden. Ursachen dafür wurden nicht weiter abgeklärt, da es vermutlich nicht mehr direkt mit den \acrshort{API}'s zu tun hat.
 
 \newpage
@@ -786,7 +786,7 @@ Die Entwicklung der \acrshort{OpenGL}-Applikation verlief problemlos. Da zuerst 
 Grundsätzlich unterstützt \acrshort{OpenGL} kein \gls{Multithreading}. Das heisst, es lässt nativ keine Parallelisierung durch den Programmierer zu, sondern möchte alles \acrshort{API}-intern handhaben und selbst optimieren. Dies bedeutet grundsätzlich längere Lade- und Startzeiten der Applikationen mit \acrshort{OpenGL}, da diese nur mit einem Thread gleichzeitig Assets laden können. Unter Assets versteht man generell Modelle, Texturen, Audiodateien und dergleichen.
 
 \subsection{VK}
-Das Development der Vulkan-\gls{Engine} verlief nicht ganz so problemlos, vor allem da diese zuerst geschrieben wurde. Das bedeutete, die ganzen Systeme, welche bei \acrshort{OpenGL} einfach übernommen wurden, mussten hier zuerst erarbeitet und entwickelt werden. Dass hierbei viele kleine aber feine Bugs und Fehler entstehen, war erwartbar. In welcher Grössenordnung dies geschieht, war nicht vorauszusehen und es wurde definitiv nicht in dem schlussendlichen Ausmass erwartet. Dies führte zu grossen Verzögerungen und die \glspl{Engine} mussten auf einige eigentlich geplante Features verzichten. Da der Programmierer bei Vulkan sehr low-level arbeitet, muss er viel mehr selber machen als bei höheren \acrshort{API}'s wie \acrshort{OpenGL}. Dies führt einerseits zu einer grösseren Freiheit für Leistungsoptimierungen, andererseits zu einem sehr viel grösseren Aufwand für dasselbe Ergebnis. Man schaue sich die rohen Zahlen an: Bei \acrshort{OpenGL} betrug die Anzahl Zeilen Quellcode in der finalen Form ca. 3'500, bei Vulkan etwa 8'500. Dass bei rund 5'000 Zeilen mehr Code viel mehr Fehler entstehen können, ist zu erwarten.
+Das Development der Vulkan-\gls{Engine} verlief nicht ganz so problemlos, vor allem da diese zuerst geschrieben wurde. Das bedeutete, die ganzen Systeme, welche bei \acrshort{OpenGL} einfach übernommen wurden, mussten hier zuerst erarbeitet und entwickelt werden. Dass hierbei viele kleine aber feine Bugs und Fehler entstehen, war erwartbar. In welcher Grössenordnung dies geschieht, war nicht vorauszusehen und es wurde definitiv nicht in dem schlussendlichen Ausmass erwartet. Dies führte zu grossen Verzögerungen und die \glspl{Engine} mussten auf einige eigentlich geplante Features verzichten. Da der Programmierer bei Vulkan sehr low-level arbeitet, muss er viel mehr selber machen als bei höheren \acrshort{API}'s wie \acrshort{OpenGL}. Dies führt einerseits zu einer grösseren Freiheit für Leistungsoptimierungen, andererseits zu einem sehr viel grösseren Aufwand für dasselbe Ergebnis. Man schaue sich die rohen Zahlen an: Bei \acrshort{OpenGL} betrug die Anzahl Zeilen Quellcode in der finalen Form ca. 3'500, bei Vulkan etwa 8'500. Dass bei rund 5'000 Zeilen mehr Code viel mehr Fehler entstehen können, ist zu erwarten. 
 Insbesondere gab es ein Problem, welches über mehrere Wochen bestand: Es wurden Texturen nicht richtig dargestellt. Es wurde alles mehrmals überprüft: Texturkoordinaten, Texturdateien, die \gls{Shader}, die Mappings auf das Modell... Nichts schien zu helfen, nicht eimal das Update auf die Vulkan Spec-Version 1.1.114.0. Dann wurden die Lighting-Berechnungen eingebaut und plötzlich waren die Artefakte einfach weg, wofür bis heute keine rationale Erklärung gefunden wurde. Ein weiteres Problem an welchem lange gearbeitet wurde stand im Zusammenhang mit der Asynchronität von Vulkans Ausführung auf der Grafikkarte. Da nicht bekannt war, welches Modell gerade durch die Pipeline und die \gls{Shader} gepumpt wurde, war zwangsweise ebenfalls nicht bekannt, wann welche Model-Matrix zu den \gls{Shader}n gesendet werden musste. Die einfachste Lösung boten die sogenannten \textit{Push Constants}. Push Constants dienen dazu, an einem bestimmten Punkt der Ausführung eines Command Buffers einen Wert zu den \gls{Shader}n hochzuladen. Somit kann genau dann, wenn ein bestimmtes Model die \gls{Shader} Stages durchläuft, ein Wert hochgeladen werden. An sich sind Push Constants sehr schnelle und performancegünstige Lösungen, um kleinere Datenmengen hochzuladen. Push Constants müssen laut der Vulkan \acrshort{API} Spezifikation immer mindestens 128 Byte unterstützen.\footcite{push-constant-vkspec} Dies passt perfekt für eine $4\times4$-Matrix aus 32-bit \glspl{Float} wie die Model-Matrix eine ist: $4 \cdot 4 \cdot 32$ Bit $= 512$ Bit $\widehat{=}$ 64 Byte. Die Model-Matrix muss also zwangsweise auf jedem System immer durch Push Constants hochgeladen werden können. Das Wörtchen 'Constant' jedoch birgt ein Problem: Die Model-Matrix wäre konstant, also jedesmal dieselbe. Das Modell würde sich nicht bewegen, rotieren oder sonst irgendwie verändern können. Um diese konstante Qualität wegzunehmen wurden die Command Buffer jedes \gls{Frame} neu aufgenommen und somit implizit auch die \textit{Descriptor Sets}, welche als Übermittler von Daten an \gls{Shader} agieren, neu erstellt. Dies führt zu einem dramatischen Performanceverlust. Besser wäre es gewesen, einen grösseren Uniform Buffer hochzuladen und dann über eine Push Constant in ein Array an Model-Matrizen zu indexieren. Dies wurde jedoch absichtlich nicht umgesetzt, da es erstens nicht direkt funktionieren wollte und es zweitens Nachteile nach sich zieht: Entweder es wird ein dynamischer Uniform Buffer eingführt (kompliziert), oder es gibt eine Obergrenze an Modellen, welche dargestellt werden können. Deswegen wurde dies vorerst nicht umgesetzt, hauptsächlich wegen des Zeitdrucks. Die Leistung der Vulkan-\gls{Engine} wurde aber nicht völlig vernachlässigt. Es wurde lange Zeit damit zugebracht, \gls{Multithreading} für das Asset-Loading einzubauen. Dort gab es lange Probleme mit der Synchronisation, da zeitweise auf bis zu 12 \glspl{Thread} gleichzeitig gearbeitet wurde. Das System funktioniert über einen Handler-Thread und 12 Worker-\glspl{Thread}. Der Handler-Thread pusht dabei neu eintreffende Ladeaufträge zu einem Warteschlangen-Objekt der Standardbibliothek von C++ und der erste Worker-Thread, der frei ist, nimmt immer das vorderste Element dieser \textit{std::queue} (engl. \textit{queue}, 'Warteschlange'). So kann die \acrshort{CPU} im Zusammenspiel mit Vulkan optimal ausgenutzt werden. Das Problem ist nur, dass Vulkan den Zugriff mehrerer \glspl{Thread} auf gewisse Objekte und Parameter selbst intern mit seinen \textit{VkFence}'s, \textit{VkSemaphore}'s oder \textit{VkMemoryBarrier}'s synchronisiert und den Zugriff auf andere nicht. Dabei ist in der Vulkan Spezifikation genau definiert welche Parameter bei welchen Funktionen vom Programmierer mit externen Synchronisationsobjekten wie STL's \textit{std::mutex} synchronisiert werden müssen.\footcite{vkspec-multithreading}
 
 \subsection{Lizensierung der Software}
@@ -805,7 +805,7 @@ Ein Doppelpendel ist im physikalischen Sinne ein beliebtes Modell zur Darstellun
         \draw[gray, dashed] (0,0) coordinate (a) -- (0,-1.3) coordinate (b);
         \filldraw[black] (0,0) circle (2pt) node[anchor=south] {(0, 0)};
         \draw[black, thick] (0,0) -- (1.5,-2.59807621135) coordinate (c) node[midway,anchor=west] {$\ell_{1}$};
-        \draw[gray, dashed] (c) -- (1.5,-3.89807621135) coordinate (d);
+        \draw[gray, dashed] (c) -- (1.5,-3.89807621135) coordinate (d); 
         \draw[black, thick] (c) -- (4.09807621135,-4.09807621135) coordinate (e) node[midway,anchor=south] {$\ell_{2}$};
         \draw[black] (0, -1) arc (-90:-60:1);
         \draw[black] (1.5,-3.59807621135) arc (-90:-30:1);
@@ -874,7 +874,7 @@ Und die Geschwindigkeiten wiederum nach der Zeit abgeleitet ergeben die Beschleu
 Hierbei entspricht die Winkelgeschwindigkeit $\omega = \frac{d}{dt} \theta$ der ersten, und die Winkelbeschleunigung $\alpha = \frac{d^{2}}{dt^{2}} \theta$ der zweiten Ableitung des Winkels nach der Zeit.
 
 \subsubsection{Mechanik des Doppelpendels}
-Auf die Pendelmassen wirken Kräfte. Zum einen die Kraft der Verbindungsstücke $(F_{1, 2})$ auf die einzelnen Massen, zum anderen die Gravitationskraft. Die Idee hinter der folgenden betragsmässigen Betrachtung birgt das Aktionsprinzip resp. das zweite newtonsche Gesetz:
+Auf die Pendelmassen wirken Kräfte. Zum einen die Kraft der Verbindungsstücke $(F_{1, 2})$ auf die einzelnen Massen, zum anderen die Gravitationskraft. Die Idee hinter der folgenden betragsmässigen Betrachtung birgt das Aktionsprinzip resp. das zweite newtonsche Gesetz: 
 \begin{align*}
     \vec{F} = m \cdot \vec{a}
 \end{align*}
@@ -940,21 +940,21 @@ float p1_acc;
 float p2_acc;
 
 void computePendulumState() {
-
+    
     [...]
-
+    
     p1_acc = getAccP1();
     p2_acc = getAccP2();
-
+        
     [...]
-
+        
     p1_vel += p1_acc;
     p2_vel += p2_acc;
     p1_theta += p1_vel;
     p2_theta += p2_vel;
-
+    
     [...]
-
+    
 }
 \end{minted}
 Aber ist dies physikalisch vertretbar? Mit einem kleinen Trick, ja. Die Geschwindigkeit ist die Änderung des Ortes pro Zeit. Die Beschleunigung ist die Änderung der Geschwindigkeit pro Zeit. Dies ist praktisch die Definition der Differentialrechnung. 'Pro Zeit' $ = \Delta t = const.$ Wenn das $\Delta t$ infinitissimal klein wird, spricht man von $dt$. Es handelt sich dabei immer um dieselben Zeitabschnitte. Aber hier befinden wir uns in einer Computersimulation, wo Iterationen über eine Schleife garantiert nicht immer gleich lange dauern, und dort liegt auch das Problem. Wenn jedoch irgendwie sichergestellt wäre, dass die Iterationen immer etwa gleich lange dauern und das $\Delta t$ somit \textit{fast} konstant wäre ($\Delta t \approx const.$), könnte man dies eher vertreten. Der Trick besteht darin, dass man ein Prinzip aus der Simulationstechnik anwendet: der sogenannte Timestep. Als Timestep wird ein Verfahren bezeichnet, bei dem man in einer Iteration mehrmals dieselbe Berechnung durchführt, um gewisse Prozesse in Simulationen zu beschleunigen. Mehrere Iterationen pro Iteration der Hauptschleife helfen hier aber nicht weiter, wenn das Ziel ist, ein konstantes $\Delta t$ zu garantieren. Deshalb wird das Verfahren umgekehrt: Es werden weniger Iterationen pro Hauptschleifeniteration gemacht, und durch eine Zeitdifferenz vergleichsweise genau gezählt. Und so funktioniert es: Am Anfang der Schleife nimmt man einen Zeitstempel auf. Am Ende der Schleife schreibt man diesen in eine statische Variable, welche bei der nächsten Iteration abrufbar ist. Bei der nächsten Iteration wird der Zeitstempel am Anfang der Schleife aktualisiert. Wenn jetzt die Differenz zwischen diesem neuen Anfangszeitstempel und dem Zeitstempel der letzten Iteration grösser als z.B. $\frac{1}{60} s$ (entspricht 60 Iterationen pro Sekunde = 60 Hz) ist macht man die nächste Iteration, ansonsten wird gewartet bis die Differenz grösser ist. Hier wurde der eingebaute Timer der Windowing-Library \acrshort{GLFW} 3 \textit{glfwGetTime()} verwendet. So wird mit einer minimalen Ungenauigkeit in der Grössenordnung von einigen Nano- bis Mikrosekunden\footcite{glfwGetTimeDoc} garantiert, dass es keine nennenswerten Unterschiede beim $\Delta t$ gibt. So wurde das im Quellcode umgesetzt:
@@ -977,9 +977,9 @@ void computePendulumState() {
         p2_vel += p2_acc;
         p1_theta += p1_vel;
         p2_theta += p2_vel;
-
+        
         [...]
-
+        
         last = now;
 
     }
@@ -987,7 +987,7 @@ void computePendulumState() {
 }
 \end{minted}
 Und deshalb sollten diese einfachen Additionen physikalisch gesehen kein Problem sein. All dies führt zu einer nahtlosen Simulation, welche allerdings ein Problem mit sich bringt: Die Gesamtenergie des Systems wird je nach Wahl der Startparameter über kurz oder lang gegen $\pm\infty$ gehen, da alle Störkräfte wie Reibung und Luftwiderstand vernachlässigt werden und vor allem da mit 32-bit \glspl{Float} gerechnet wird, was zu Rechenungenauigkeiten führt. Wenn die aktuelle Energie $E_{\text{tot}}$ aufgrund von Rechenungenauigkeiten über die theoretisch maximal mögliche Energie $E_{\text{max}}$ hinaussteigt, explodieren die Werte. Dies wird durch die iterative Struktur der Bewegungsgleichungen (neue Winkelbeschleunigung wird in Abhängigkeit der alten Winkelgeschwindigkeit berechnet) verstärkt. Dadurch könnte es sein, dass die Zahlen sehr schnell steigen und sehr hohe Beschleunigungen, Geschwindigkeiten und Winkel herauskommen. Nach IEEE-754-Standard können 32-bit \gls{Floating-Point}-Zahlen Werte bis maximal $(2 - 2^{-23}) \cdot 2^{127} \approx 3.4028235 \cdot 10^{38}$ darstellen. Wird versucht, einen grösseren Wert in diesen zu kleinen Speicher zu schreiben, könnte dies einen ungehandelten Buffer-Overflow zur Folge haben. Es würde somit mit ungültigen Werten weitergerechnet. Im extremsten Fall würden die Matrix-Berechnungen mit den Variablen für die Winkel, welche als 32-bit \glspl{Float} definiert wurden, Resultate liefern, die keinen Sinn machen (sog. \acrshort{NaN}'s). Das Doppelpendel würde nicht mehr dargestellt werden können. Und das Experiment zeigt, dass dem auch so ist. Mit gewissen Startwerten für Startgeschwindigkeiten, Startbeschleunigungen und Auslenkungswinkel passiert genau dies. Über kurz oder lang bauen sich die Variablen gegen $\pm\infty$ auf. Dies kann in Bruchteilen von Sekunden oder über einen längeren Zeitraum, wo man sieht wie die Rotationen der Pendel immer ekstatischer werden, geschehen. Und dann ist das Pendel plötzlich einfach weg. Dies war während der Implementation des Doppelpendels lange Zeit ein grosses Problem und hing vor allem mit einem Umrechnungsfehler von Grad- zu Bogenmass zusammen, wodurch mit viel völlig falschen Werten gerechnet wurde. Mit den richtigen Parametern lässt sich eine stabile Simulation erzeugen, welche nicht plötzlich kollabiert. Mit gewissen Startwerten für gewisse Parameter lässt sich trotzdem noch ein Buffer-Overflow erzeugen.\par
-Da dieser Umrechnungsfehler erst sehr viel später entdeckt wurde, wurde zuerst angenommen, dass die Bewegungsgleichungen nicht stimmen oder dass irgendetwas mit der Implementation falsch ist. Dem war nicht so, jedoch wurde eine energetische Betrachtung durchgeführt um zu überprüfen, dass es sich um korrekte Gleichungen handelt und dabei kamen interessante Dinge zutage.
+Da dieser Umrechnungsfehler erst sehr viel später entdeckt wurde, wurde zuerst angenommen, dass die Bewegungsgleichungen nicht stimmen oder dass irgendetwas mit der Implementation falsch ist. Dem war nicht so, jedoch wurde eine energetische Betrachtung durchgeführt um zu überprüfen, dass es sich um korrekte Gleichungen handelt und dabei kamen interessante Dinge zutage. 
 \begin{align}
     E_{\text{kin}} &= \frac{1}{2} m v^{2} \\
     E_{\text{pot}} &= mgh \\
@@ -1216,12 +1216,12 @@ debugUtilsMessengerInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EX
 
 \subsubsection{Flags herausfiltern}
 \begin{minted}[linenos=true]{cpp}
-if (qF.queueCount > 0 &&
+if (qF.queueCount > 0 && 
     (qF.queueFlags & VK_QUEUE_TRANSFER_BIT) &&   // Ist VK_QUEUE_TRANSFER_BIT gesetzt?
     !(qF.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {  // Ist VK_QUEUE_GRAPHICS_BIT nicht gesetzt?
-
+                
     family.transferFamilyIndex = i;
-
+                
 }
 \end{minted}
 
@@ -1266,8 +1266,8 @@ in vec3 outNor;
 
 out vec4 FragColor;
 
-uniform vec3 lightPos;
-uniform vec3 viewPos;
+uniform vec3 lightPos; 
+uniform vec3 viewPos; 
 uniform vec3 lightColor;
 
 uniform sampler2D texDiffuse1;
@@ -1279,20 +1279,20 @@ void main() {
     // ambient lighting
     float ambientStrength       = 0.1;
     vec3 ambient                = ambientStrength * lightColor;
-
+  	
     // diffuse lighting
     vec3 norm                   = normalize(outNor);
     vec3 lightDir               = normalize(lightPos - outPos);
     float diff                  = max(dot(norm, lightDir), 0.0);
     vec3 diffuse                = diff * lightColor;
-
+    
     // specular lighting
     float specularStrength      = 0.5;
     vec3 viewDir                = normalize(viewPos - outPos);
-    vec3 reflectDir             = reflect(-lightDir, norm);
+    vec3 reflectDir             = reflect(-lightDir, norm);  
     float spec                  = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular               = specularStrength * spec * lightColor;
-
+    vec3 specular               = specularStrength * spec * lightColor;  
+        
     vec3 result                 = (ambient + diffuse + specular) * objectColor;
     FragColor                   = vec4(result, 1.0);
 
@@ -1367,20 +1367,20 @@ void main() {
     // ambient lighting
     float ambientStrength       = 0.1;
     vec3 ambient                = ambientStrength * ld.lightCol;
-
+  	
     // diffuse lighting
     vec3 norm                   = normalize(outNor);
     vec3 lightDir               = normalize(ld.lightPos - outPos);
     float diff                  = max(dot(norm, lightDir), 0.0);
     vec3 diffuse                = diff * ld.lightCol;
-
+    
     // specular lighting
     float specularStrength      = 0.5;
     vec3 viewDir                = normalize(ld.viewPos - outPos);
-    vec3 reflectDir             = reflect(-lightDir, norm);
+    vec3 reflectDir             = reflect(-lightDir, norm);  
     float spec                  = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular               = specularStrength * spec * ld.lightCol;
-
+    vec3 specular               = specularStrength * spec * ld.lightCol;  
+        
     vec3 result                 = (ambient + diffuse + specular) * objectColor;
     outColor                    = vec4(result, 1.0);
 
@@ -1401,7 +1401,7 @@ graphicsPipelineCreateInfo.pRasterizationState = rasterizationStateCreateInfo_;
 graphicsPipelineCreateInfo.pMultisampleState = multisampleStateCreateInfo_;
 graphicsPipelineCreateInfo.pDepthStencilState = depthStencilStateCreateInfo_;
 graphicsPipelineCreateInfo.pColorBlendState = colorBlendStateCreateInfo_;
-graphicsPipelineCreateInfo.pDynamicState = dynamicStateCreateInfo_;
+graphicsPipelineCreateInfo.pDynamicState = dynamicStateCreateInfo_;    
 graphicsPipelineCreateInfo.layout = pipelineLayout;
 graphicsPipelineCreateInfo.renderPass = renderPass_;
 graphicsPipelineCreateInfo.subpass = 0;
@@ -1410,7 +1410,7 @@ graphicsPipelineCreateInfo.basePipelineIndex = -1;
 
 result = vkCreateGraphicsPipelines(
     vk::core::logicalDevice,        // Logical Device (GPU)
-    VK_NULL_HANDLE,
+    VK_NULL_HANDLE, 
     1,
     &graphicsPipelineCreateInfo,    // Create Info Struct
     vk::core::allocator,            // Allocator
